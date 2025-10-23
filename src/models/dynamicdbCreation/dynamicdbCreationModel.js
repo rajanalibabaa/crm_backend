@@ -1,3 +1,4 @@
+// models/dynamicdbCreation/dynamicdbCreationModel.js
 import mongoose from "mongoose";
 
 const tenantSchema = new mongoose.Schema({
@@ -5,7 +6,8 @@ const tenantSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   phoneNumber: { type: String, required: true },
   dbName: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now }
+  mongoURI: { type: String, required: true }, // ✅ store the full tenant DB connection URL
+  createdAt: { type: Date, default: Date.now },
 });
 
 export default mongoose.model("Tenant", tenantSchema);

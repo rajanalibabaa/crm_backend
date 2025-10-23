@@ -5,8 +5,9 @@ find the running  container : docker ps
 To stop container : docker stop <container_id>
 Re-run your container : docker compose up -d --build
 
-
+docker run -d -p 5050:5050 --name crm_api crm_backend-api
 To start,
+"docker-compose up --build"
 
 clone - check the path changes -  create and .env files  (cp .env.example .env) - start container 
 
