@@ -18,7 +18,7 @@ app.use('/api',mainRouter)
 // app.use(pipelineRouter)
 
 app.get("/", (req, res) => {
-  res.send("✅ Server is running fine!");
+  res.send("✅ Server is running fine welcome!");
 });
 
 export default app;
