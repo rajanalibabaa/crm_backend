@@ -1,10 +1,14 @@
-import { PipelineCollection } from "../../models/pipeline/pipeline.model.js";
+import { getPipelineModel } from "../../models/pipeline/pipeline.model.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
-
+import uuid from "../../utils/uuid.js"
 
 export const createPipeline = async (req, res) => {
   try {
-    const { pipelineName, data } = req.body;
+    const { pipelineName, data ,dbname} = req.body;
+
+    console.log("Creating pipeline in DB:", dbname);
+
+    const PipelineCollection = await getPipelineModel(dbname);
 
     if (!pipelineName || !data) {
       return res.json(new ApiResponse(400, null, "pipelineName and data are required"));
@@ -15,7 +19,9 @@ export const createPipeline = async (req, res) => {
       return res.json(new ApiResponse(409, null, "Pipeline already exists"));
     }
 
-    const newPipeline = await PipelineCollection.create({ pipelineName, data });
+    const generateuuid = uuid()
+
+    const newPipeline = await PipelineCollection.create({ pipelineName, data ,uuid:generateuuid });
     return res.json(new ApiResponse(201, newPipeline, "Pipeline created successfully"));
   } catch (error) {
     console.error("Error creating pipeline:", error);
@@ -25,6 +31,10 @@ export const createPipeline = async (req, res) => {
 
 export const getAllPipeline = async (req, res) => {
   try {
+    const dbname = req.query?.dbname
+    console.log("Fetching all pipelines from DB:", dbname);
+    const PipelineCollection = await getPipelineModel(dbname);
+
     
     const alldata = await PipelineCollection.find({});
     console.log(alldata.length)
@@ -42,6 +52,9 @@ export const getAllPipeline = async (req, res) => {
 export const getByPipelineId = async (req, res) => {
   try {
     const id = req.params?.id
+    const dbname = req.query?.dbname
+    const PipelineCollection = await getPipelineModel(dbname);
+
     if (!id) {
       return res.json(new ApiResponse(400, null, "Pipeline ID is required"));
     }
@@ -61,6 +74,8 @@ export const getByPipelineId = async (req, res) => {
 export const deletePipeline = async (req, res) => {
   try {
     const id = req.params?.id;
+    const dbname = req.query?.dbname
+    const PipelineCollection = await getPipelineModel(dbname);
 
     if (!id) {
       return res.json(new ApiResponse(400, null, "Pipeline ID is required"));
@@ -85,6 +100,9 @@ export const updatePipelineId = async (req, res) => {
   try {
     const id = req.params?.id; 
     const { addStages } = req.body; 
+    const dbname = req.query?.dbname
+    const PipelineCollection = await getPipelineModel(dbname);
+
 
     // console.log(addStages)
 
@@ -128,4 +146,3 @@ export const updatePipelineId = async (req, res) => {
     return res.json(new ApiResponse(500, null, "Failed to update pipeline"));
   }
 };
-
