@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  # ======================
+  # Node.js Backend Service
+  # ======================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crm_api
+    restart: always
+    ports:
+      - "5050:5050"        # Expose backend on localhost:5000
+    env_file:
+      - .env               # Load environment variables
+    volumes:
+      - .:/app             # Live code sync for development
+      - /app/node_modules  # Prevent overwriting installed node_modules
+    depends_on:
+      - mongo              # Wait until MongoDB starts
+    networks:
+      - crm_network
+
+  # ======================
+  # MongoDB Database Service
+  # ======================
+  mongo:
+    image: mongo:6
+    container_name: crm_mongo
+    restart: always
+    ports:
+      - "27017:27017"      # MongoDB accessible at localhost:27017
+    volumes:
+      - mongo_data:/data/db  # Persist data
+    networks:
+      - crm_network
+
+# ======================
+# Named Volumes for Persistent Data
+# ======================
+volumes:
+  mongo_data:
+
+# ======================
+# Shared Network for Service Communication
+# ======================
+networks:
+  crm_network:
+    driver: bridge

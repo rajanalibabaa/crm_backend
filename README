@@ -1,1 +1,12 @@
 CRM FOLDER STRUCTURE
+
+find the images : docker images
+find the running  container : docker ps
+To stop container : docker stop <container_id>
+Re-run your container : docker compose up -d --build
+
+
+To start,
+
+clone - check the path changes -  create and .env files  (cp .env.example .env) - start container 
+
