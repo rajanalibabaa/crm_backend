@@ -14,7 +14,7 @@ app.use(morgan("dev"));
 app.use('/api',mainRouter)
 
 app.get("/", (req, res) => {
-  res.send("✅ Server is running fine!");
+  res.send("✅ Server is running fine port new5050!");
 });
 
 export default app;
