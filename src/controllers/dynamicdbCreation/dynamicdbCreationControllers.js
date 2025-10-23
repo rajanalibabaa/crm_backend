@@ -1,3 +1,4 @@
+// controllers/dynamicdbCreation/registerCompanyController.js
 import Tenant from "../../models/dynamicdbCreation/dynamicdbCreationModel.js";
 import { getTenantDB } from "../../utils/dynamicdbCreationTenant.js";
 
@@ -5,24 +6,34 @@ export const registerCompany = async (req, res) => {
   try {
     const { companyName, email, phoneNumber } = req.body;
 
-    const dbName = `crm_${companyName.toLowerCase().replace(/\s/g, "_")}`;
+    if (!companyName || !email || !phoneNumber) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
+    }
 
-    // Save tenant info in main DB
-    const tenant = await Tenant.create({ companyName, email, dbName, phoneNumber });
+    const existingTenant = await Tenant.findOne({ email });
+    if (existingTenant) {
+      return res.status(400).json({ success: false, message: "Tenant with this email already exists" });
+    }
 
-    // Create the tenant database dynamically
-    const db = await getTenantDB(dbName);
+    const clusterBase = "mongodb+srv://rajanalibabaa:LJkzt84ulD3yb74A@mrfranchise.vanempq.mongodb.net";
+    const dbName = `crm_${companyName.toLowerCase().replace(/\s/g, "_")}_${Date.now()}`;
+    const mongoURI = `${clusterBase}/${dbName}?retryWrites=true&w=majority&tls=true&appName=maincrm`;
 
-    // Optional: create first collection
-    await db.createCollection("crm_main_users_collection");
+    // Save tenant info
+    const tenant = await Tenant.create({ companyName, email, phoneNumber, dbName, mongoURI });
+
+    // Connect tenant DB (no collection creation)
+    await getTenantDB(dbName);
 
     res.status(201).json({
       success: true,
-      message: `Database created for ${companyName}`,
-      dbName
+      message: `Tenant registered successfully for ${companyName}`,
+      dbName,
+      mongoURI,
+      tenantId: tenant._id,
     });
   } catch (error) {
-    console.error("❌ Error creating tenant:", error.message);
+    console.error(error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
