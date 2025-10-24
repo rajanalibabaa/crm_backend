@@ -98,51 +98,107 @@ export const deletePipeline = async (req, res) => {
 
 export const updatePipelineId = async (req, res) => {
   try {
-    const id = req.params?.id; 
-    const { addStages } = req.body; 
-    const dbname = req.query?.dbname
-    const PipelineCollection = await getPipelineModel(dbname);
+    const id = req.params?.id;
+    const { addStages, deleteStages, updateStagesName } = req.body;
+    const dbname = req.query?.dbname;
 
-
-    // console.log(addStages)
+    // console.log("updateStagesName", updateStagesName);
 
     if (!id) {
       return res.json(new ApiResponse(400, null, "Pipeline ID is required"));
     }
 
-    if (!Array.isArray(addStages) || addStages.length === 0) {
-      return res.json(new ApiResponse(400, null, "addStages array is required"));
-    }
-
-    
+    const PipelineCollection = await getPipelineModel(dbname);
     const pipeline = await PipelineCollection.findOne({ uuid: id });
+
     if (!pipeline) {
       return res.json(new ApiResponse(404, null, "Pipeline does not exist"));
     }
 
-    let newdata = pipeline.data
+    async function addStagesFunction(pipeline) {
+      let newdata = pipeline?.data || [];
 
-     addStages.forEach(({ insertIndex, stage }, i) => {
+      addStages.forEach(({ insertIndex, data }) => {
+        if (typeof insertIndex === "number" && data) {
+          const safeIndex = Math.min(Math.max(insertIndex, 0), newdata.length);
+          newdata.splice(safeIndex, 0, data);
+        }
+      });
+
+      pipeline.data = newdata;
+      await pipeline.save();
+
+      return pipeline;
+    }
+
+    async function deleteStagesFunction(pipeline) {
+      let newdata = pipeline.data || [];
+
+      const deleteIndexes = Array.isArray(deleteStages)
+        ? deleteStages.map((i) => Number(i))
+        : [Number(deleteStages)];
+
+      newdata = newdata.filter((_, index) => !deleteIndexes.includes(index));
+
+      pipeline.data = newdata;
+      await pipeline.save();
+
+      return pipeline;
+    }
+    async function updateStagesNameFunction(pipeline) {
+      let newdata = pipeline?.data || [];
+      console.log("firdt ",newdata)
+
+      console.log("newdata",newdata[updateStagesName?.insertIndex])
+      const index = updateStagesName.insertIndex;
+    //   if (newdata[index]) {
+
+    //     if (updateStagesName.data?.Stage !== "") {
+    //       newdata[index] = {
+    //         ...newdata[index],
+    //         ...updateStagesName.data.Stage,
+    //       };
+    //     }
       
-        console.log(insertIndex,stage,pipeline)
-                console.log("=======================")
+      
+    // }
 
-    });
+      if (updateStagesName.data?.Stage && newdata[index].Stage !== undefined ) {
+        newdata[index].Stage = updateStagesName.data.Stage;
+      }
+    console.log("newdata ",newdata)
+      // pipeline.data = newdata;
+      // await pipeline.save();
 
-    
+      return pipeline;
+    }
 
-    // addStages.forEach(({ insertIndex, stage }, i) => {
-    //   const index = typeof insertIndex === "number" ? insertIndex + i : pipeline.data.length;
-    //   pipeline.data.splice(index, 0, stage);
-    // });
+    if (addStages && addStages.length > 0) {
+      const updatedPipeline = await addStagesFunction(pipeline);
+      return res.json(
+        new ApiResponse(200, updatedPipeline, "Multiple stages inserted successfully")
+      );
+    }
 
-    // await pipeline.save();
+    if (deleteStages) {
+      const updatedPipeline = await deleteStagesFunction(pipeline);
+      return res.json(
+        new ApiResponse(200, updatedPipeline, "Multiple stages deleted successfully")
+      );
+    }
+    if (updateStagesName) {
+      const updatedPipeline = await updateStagesNameFunction(pipeline);
+      return res.json(
+        new ApiResponse(200, updatedPipeline, "Multiple stages deleted successfully")
+      );
+    }
 
-    return res.json(
-      new ApiResponse(200, pipeline, "Multiple stages inserted successfully")
-    );
+    return res.json(new ApiResponse(400, null, "No valid action provided"));
+
   } catch (error) {
     console.error("Error updating pipeline:", error);
     return res.json(new ApiResponse(500, null, "Failed to update pipeline"));
   }
 };
+
+
