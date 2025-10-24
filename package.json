@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "jest --detectOpenHandles --forceExit"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "repository": {
     "type": "git",
@@ -30,6 +30,9 @@
     "morgan": "^1.10.1"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/preset-env": "^7.28.3",
+    "@babel/register": "^7.28.3",
     "jest": "^30.2.0",
     "mongodb-memory-server": "^10.2.3",
     "nodemon": "^3.1.10",
