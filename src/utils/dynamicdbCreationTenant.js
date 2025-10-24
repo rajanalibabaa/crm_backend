@@ -1,18 +1,60 @@
+// utils/dynamicdbCreationTenant.js
 import mongoose from "mongoose";
+import dotenv from 'dotenv';
 
-const tenantConnections = {};
+dotenv.config();
+
+const tenantConnections = new Map();
 
 export const getTenantDB = async (dbName) => {
-  if (tenantConnections[dbName]) {
-    return tenantConnections[dbName];
+  try {
+    // Reuse existing connection if available
+    if (tenantConnections.has(dbName)) {
+      const connection = tenantConnections.get(dbName);
+      if (connection.readyState === 1) {
+        return connection;
+      }
+      tenantConnections.delete(dbName);
+    }
+
+    // Build tenant URI
+    const baseURI = process.env.MONGO_URI;
+    const tenantURI = baseURI.replace('/maincrm', `/${dbName}`);
+    
+    // Create connection
+    const connection = mongoose.createConnection(tenantURI);
+    
+    // Wait for connection
+    await new Promise((resolve, reject) => {
+      connection.once('connected', resolve);
+      connection.once('error', reject);
+      setTimeout(() => reject(new Error('Connection timeout')), 15000);
+    });
+
+    tenantConnections.set(dbName, connection);
+    console.log(`✅ Connected to: ${dbName}`);
+    
+    return connection;
+
+  } catch (error) {
+    console.error(`❌ Connection failed for ${dbName}:`, error.message);
+    throw error;
   }
+};
 
-  const clusterBase = "mongodb+srv://rajanalibabaa:LJkzt84ulD3yb74A@mrfranchise.vanempq.mongodb.net";
-  const uri = `${clusterBase}/${dbName}?retryWrites=true&w=majority&tls=true&appName=mrfranchise`;
+export const createTenantCollection = async (dbName) => {
+  try {
+    const connection = await getTenantDB(dbName);
+    
+    // Create only one collection - 'leads'
+    await connection.db.createCollection('leads');
+    
+    console.log(`✅ Created 'leads' collection for: ${dbName}`);
+    
+    return { collection: 'leads' };
 
-  const connection = await mongoose.createConnection(uri);
-  tenantConnections[dbName] = connection;
-
-  console.log(`✅ Connected to tenant DB: ${dbName}`);
-  return connection;
+  } catch (error) {
+    console.error(`❌ Failed to create collection for ${dbName}:`, error.message);
+    throw error;
+  }
 };
