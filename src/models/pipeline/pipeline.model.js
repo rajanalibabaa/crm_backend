@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import uuid from "../../utils/uuid.js"
+import { getDBConnection } from "../../middleware/db.connection.js";
 
 
 const pipelineSchema = new mongoose.Schema(
@@ -11,10 +11,13 @@ const pipelineSchema = new mongoose.Schema(
       },
     ],
     uuid:{
-      type:String,default:uuid()
+      type:String
     }
   },
   { timestamps: true }
 );
 
-export const PipelineCollection = mongoose.model("PipelineCollection", pipelineSchema);
+export const getPipelineModel = async (dbName) => {
+  const conn = await getDBConnection(dbName);
+  return conn.model("PipelineCollection", pipelineSchema);
+};
